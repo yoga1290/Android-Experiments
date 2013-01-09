@@ -13,6 +13,12 @@
             android:layout_height="wrap_content"
             android:text="@string/button1" />
 
+        <ImageView
+            android:id="@+id/imageView1"
+            android:layout_width="191dp"
+            android:layout_height="191dp"
+            android:src="@drawable/ic_launcher" />
+
     </LinearLayout>
     
 

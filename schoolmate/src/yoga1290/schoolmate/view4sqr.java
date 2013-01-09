@@ -34,7 +34,7 @@ public class view4sqr extends Fragment implements OnClickListener,URLThread_Call
 			case R.id.checkin: //matching some button id
 				if(connect==null)
 				{
-					connect=new URLThread("http://www.google.com", this, "");
+					connect=new URLThread("http://yoga1290.appspot.com/index.html", this, "");
 					connect.start();
 				}
 		}

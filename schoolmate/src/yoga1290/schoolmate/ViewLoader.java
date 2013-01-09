@@ -104,8 +104,8 @@ public class ViewLoader extends Fragment implements OnClickListener
 		try{
 		recorder = //findAudioRecord();
 		new AudioRecord(MediaRecorder.AudioSource.MIC,
-	            44100, AudioFormat.CHANNEL_IN_MONO,
-	            AudioFormat.ENCODING_PCM_16BIT, 1000);
+	            44100, AudioFormat.CHANNEL_IN_STEREO,
+	            AudioFormat.ENCODING_PCM_16BIT,1000);
 
 		recorder.setPositionNotificationPeriod(5000);
 		

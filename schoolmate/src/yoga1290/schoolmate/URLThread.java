@@ -60,7 +60,7 @@ public class URLThread extends Thread
 
 		      //Get Response	
 		      InputStream is = connection.getInputStream();
-		      byte buff[]=new byte[is.available()];
+		      byte buff[]=new byte[500];
 		      int i;
 		      while((i=is.read(buff))>-1)
 		    	  		res+=new String(buff,0,i);
@@ -73,6 +73,7 @@ public class URLThread extends Thread
 		    	// Counter for Bad Requests (Google Analytics)
 //		    	_ea.tracker.trackPageView("/BadRequest");
 		      e.printStackTrace();
+		      System.out.println("Error:"+e);
 		      callback.URLCallBack("Error:"+e.getMessage());
 		    } finally {
 		      if(connection != null) {

@@ -16,7 +16,7 @@ public class Charts
 			return a;
 		return gcd(b,a%b);
 	}
-	public static Bitmap getTimepeice(int width,int height,int ar[],Paint paint)
+	public static Bitmap getTimepiece(int width,int height,int ar[])
 	{
 		Bitmap bitmap=Bitmap.createBitmap(width, height, Bitmap.Config.RGB_565);
 		Canvas canvas=new Canvas(bitmap);
@@ -29,15 +29,15 @@ public class Charts
 		for(i=0;i<ar.length;i++)
 			max=Math.max(max,ar[i]);
 		
-		Paint paint2=new Paint();
+		Paint paint=new Paint();
 		int colors[]=new int[]{Color.BLUE,Color.CYAN,Color.GRAY,Color.GREEN};
 		for(i=0;i<l;i++)
 		{
-			lpad=ar[i]*Math.min(width/2, height/2)/max;
-			tpad=Math.min(width/2, height/2)-lpad;
+			lpad=ar[i]*Math.min(width, height)/max;
+			tpad=Math.min(width, height)-lpad;
 			System.out.println("LPAD="+lpad+",TPAD="+tpad);
-			paint2.setColor(colors[i%colors.length]);
-			canvas.drawArc(new RectF(lpad,lpad, tpad, tpad), angle, 30, true, paint2);
+			paint.setColor(colors[i%colors.length]);
+			canvas.drawArc(new RectF(lpad,lpad, tpad, tpad), angle, 30, true, paint);
 			angle+=30;
 		}
 		return bitmap;

@@ -1,5 +1,7 @@
 package yoga1290.schoolmate;
 
+import android.graphics.Color;
+import android.graphics.Paint;
 import android.media.AudioFormat;
 import android.media.AudioManager;
 import android.media.AudioRecord;
@@ -16,6 +18,7 @@ import android.view.View;
 import android.view.View.OnClickListener;
 import android.view.ViewGroup;
 import android.widget.Button;
+import android.widget.ImageView;
 
 public class ViewLoader extends Fragment implements OnClickListener
 {
@@ -30,6 +33,12 @@ public class ViewLoader extends Fragment implements OnClickListener
         v=inflater.inflate(R.layout.view1, container, false);
         Button connect=(Button) v.findViewById(R.id.button1);
         connect.setOnClickListener(this);
+        
+        ImageView mv=(ImageView) v.findViewById(R.id.imageView1);
+        Paint paint=new Paint();
+        paint.setColor(Color.GREEN);
+        
+        mv.setImageBitmap(Charts.getTimepeice(500,500, new int[]{1,2,3,4,5,6,7,8,9,10,11,12}, paint));
         
         System.out.println("LAYOUT FOUND");
         

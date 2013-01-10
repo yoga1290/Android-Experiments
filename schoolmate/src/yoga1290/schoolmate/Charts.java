@@ -34,6 +34,7 @@ public class Charts
 		for(i=0;i<l;i++)
 		{
 			lpad=ar[i]*Math.min(width, height)/max;
+			lpad>>=1;
 			tpad=Math.min(width, height)-lpad;
 			System.out.println("LPAD="+lpad+",TPAD="+tpad);
 			paint.setColor(colors[i%colors.length]);

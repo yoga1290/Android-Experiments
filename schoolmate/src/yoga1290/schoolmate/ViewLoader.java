@@ -20,7 +20,7 @@ import android.view.View.OnClickListener;
 import android.view.ViewGroup;
 import android.widget.Button;
 import android.widget.ImageView;
-
+import yoga1290.schoolmate.R;
 public class ViewLoader extends Fragment implements OnClickListener
 {
 	View v;
@@ -111,16 +111,30 @@ public class ViewLoader extends Fragment implements OnClickListener
 	static AudioRecord recorder;
 	@Override
 	public void onClick(View v) {
+		int x=0;
+		byte buff[]=new byte[1000];
 		try{
 		recorder = //findAudioRecord();
-		new AudioRecord(MediaRecorder.AudioSource.MIC,
+		new AudioRecord(MediaRecorder.AudioSource.VOICE_RECOGNITION,
 	            44100, AudioFormat.CHANNEL_IN_STEREO,
 	            AudioFormat.ENCODING_PCM_16BIT,1000);
+		AudioTrack track=new AudioTrack(AudioManager.STREAM_SYSTEM, 
+				recorder.getSampleRate(),
+				recorder.getChannelConfiguration(), 
+				recorder.getAudioFormat(),
+				recorder.getMinBufferSize(recorder.getSampleRate(), recorder.getChannelConfiguration(), recorder.getAudioFormat()) , 
+				AudioTrack.MODE_STREAM);
 
-		recorder.setPositionNotificationPeriod(5000);
+//		recorder.setPositionNotificationPeriod(5000);
 		
 //	    recorder.setRecordPositionUpdateListener(updateRecord);
 	    recorder.startRecording();
+	    
+	    
+	    ((Button)v).setText("Reading...");
+	    while((x=recorder.read(buff, 0, buff.length))>0)
+	    		track.write(buff, 0, x);
+	    ((Button)v).setText("Done :)");
 		}catch(Exception e){((Button)v).setText(e.getMessage());System.out.println(e);}
 //	    Handler handler = new Handler(); 
 //	    handler.postDelayed(new Runnable() { 

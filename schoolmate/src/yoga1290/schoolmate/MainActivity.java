@@ -50,7 +50,7 @@ public class MainActivity extends FragmentActivity {
 
 class MyFragmentPagerAdapter extends FragmentPagerAdapter{
 	 
-    final int PAGE_COUNT = 2;
+    final int PAGE_COUNT = 3;
  
     /** Constructor of the class */
     public MyFragmentPagerAdapter(FragmentManager fm) {
@@ -71,6 +71,8 @@ class MyFragmentPagerAdapter extends FragmentPagerAdapter{
     		{
     			case 0:
     				return new view4sqr();
+    			case 1:
+    				return new RecorderView();
     		}
         return new ViewLoader();
     }

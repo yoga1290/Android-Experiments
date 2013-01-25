@@ -3,6 +3,17 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent" >
 
+    
+
+    <EditText
+        android:id="@+id/audioPeer"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_above="@+id/audioPeerOk"
+        android:layout_centerHorizontal="true"
+        android:ems="10" android:inputType="textAutoComplete">
+
+    </EditText>
     <Button
         android:id="@+id/audioPeerOk"
         android:layout_width="wrap_content"
@@ -11,15 +22,13 @@
         android:layout_centerVertical="true"
         android:text="@string/button" />
 
-    <EditText
-        android:id="@+id/audioPeer"
+    <Button
+        android:id="@+id/stopbutton"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_above="@+id/audioPeerOk"
-        android:layout_centerHorizontal="true"
-        android:ems="10" android:inputType="">
-
-        <requestFocus />
-    </EditText>
+        android:layout_alignRight="@+id/audioPeerOk"
+        android:layout_below="@+id/audioPeerOk"
+        android:layout_marginTop="26dp"
+        android:text="@string/stopbutton" />
 
 </RelativeLayout>

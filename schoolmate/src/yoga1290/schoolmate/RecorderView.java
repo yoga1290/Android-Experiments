@@ -12,6 +12,7 @@ import android.media.AudioFormat;
 import android.media.AudioManager;
 import android.media.AudioManager.OnAudioFocusChangeListener;
 import android.media.AudioRecord;
+import android.media.AudioTrack;
 import android.media.MediaRecorder;
 import android.os.Bundle;
 import android.os.Environment;
@@ -20,6 +21,7 @@ import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.Button;
+import android.widget.EditText;
 
 public class RecorderView extends Fragment implements OnAudioFocusChangeListener,android.view.View.OnClickListener
 {
@@ -41,7 +43,7 @@ public class RecorderView extends Fragment implements OnAudioFocusChangeListener
 	
 	View v;
 	AudioManager am;
-	Button button_ok;
+	Button button_ok,stopbutton;
 	
 	@Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container,
@@ -54,6 +56,9 @@ public class RecorderView extends Fragment implements OnAudioFocusChangeListener
         
         button_ok=(Button) v.findViewById(R.id.audioPeerOk);
         button_ok.setOnClickListener(this);
+        
+        stopbutton=(Button) v.findViewById(R.id.stopbutton);
+        stopbutton.setOnClickListener(this);
         bufferSize = AudioRecord.getMinBufferSize(RECORDER_SAMPLERATE,RECORDER_CHANNELS,RECORDER_AUDIO_ENCODING);
         
         return v;
@@ -70,11 +75,21 @@ public class RecorderView extends Fragment implements OnAudioFocusChangeListener
 		
 	}
 	
+	private void debug(String txt)
+	{
+		try
+		{
+			EditText et=(EditText) v.findViewById(R.id.audioPeer);
+			et.setText(txt);
+		}catch(Exception e){}
+	}
+	
 	
 	
 	
 	
 	private void startRecording(){
+		try{
         recorder = new AudioRecord(MediaRecorder.AudioSource.MIC,
                                         RECORDER_SAMPLERATE, RECORDER_CHANNELS,RECORDER_AUDIO_ENCODING, bufferSize);
         
@@ -86,11 +101,13 @@ public class RecorderView extends Fragment implements OnAudioFocusChangeListener
                 
                 @Override
                 public void run() {
+                			debug("Start thread");
                         writeAudioDataToFile();
                 }
         },"AudioRecorder Thread");
         
         recordingThread.start();
+		}catch(Exception e){debug("startRecording()>"+e);}
 }
 
 private void writeAudioDataToFile(){
@@ -101,6 +118,7 @@ private void writeAudioDataToFile(){
         try {
                 os = new FileOutputStream(filename);
         } catch (Exception e) {
+        			debug(1+">"+e);
                 // TODO Auto-generated catch block
                 e.printStackTrace();
         }
@@ -113,6 +131,7 @@ private void writeAudioDataToFile(){
                                 try {
                                         os.write(data);
                                 } catch (Exception e) {
+                                	debug(2+">"+e);
                                         e.printStackTrace();
                                 }
                         }
@@ -120,12 +139,16 @@ private void writeAudioDataToFile(){
                 try {
                         os.close();
                 } catch (Exception e) {
+                	debug(3+">"+e);
                         e.printStackTrace();
                 }
         }
 }
 private void stopRecording()
 {
+//	AudioTrack at=new AudioTrack(streamType, RECORDER_SAMPLERATE, RECORDER_CHANNELS, RECORDER_AUDIO_ENCODING, bufferSize, mode);
+//			(MediaRecorder.AudioSource.MIC,
+//            RECORDER_SAMPLERATE, RECORDER_CHANNELS,RECORDER_AUDIO_ENCODING, bufferSize);
     if(null != recorder)
     {
             isRecording = false;
@@ -163,6 +186,7 @@ private void stopRecording()
                 in.close();
                 out.close();
         } catch (Exception e) {
+        	debug(4+">"+e);
                 e.printStackTrace();
         }
     
@@ -244,11 +268,13 @@ private String getTempFilename(){
 public void onClick(View v) {
 	if(v.getId()==button_ok.getId())
 	{
-		if(isRecording)
+		if(recordingThread==null)
 			startRecording();
-		else
-			stopRecording();
+//		else
+//			stopRecording();
 	}
+	else
+		stopRecording();
 }
 
 

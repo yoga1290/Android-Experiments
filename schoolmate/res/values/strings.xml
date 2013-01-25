@@ -6,5 +6,6 @@
     <string name="title_activity_main">MainActivity</string>
     <string name="button1">Connect</string>
     <string name="button">Button</string>
+    <string name="stopbutton">Stop</string>
 
 </resources>

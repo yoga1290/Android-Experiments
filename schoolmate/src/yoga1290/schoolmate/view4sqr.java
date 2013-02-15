@@ -38,7 +38,8 @@ public class view4sqr extends Fragment implements OnClickListener,URLThread_Call
 	
 	View v;
 	AudioManager am;
-	URLThread connect=null;
+//	URLThread connect=null;
+	private String FoursquareToken="";
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container,
                              Bundle savedInstanceState) 
@@ -60,14 +61,14 @@ public class view4sqr extends Fragment implements OnClickListener,URLThread_Call
 	{
 		switch (v.getId())
 		{
-			case R.id.checkin: //matching some button id
-				if(connect==null)
-				{					
-					connect=new URLThread("http://yoga1290.appspot.com/index.html", this, "");
-					connect.start();
+			case R.id.checkin: //matching some button id					
+				if(ConnectFoursquare.isConnected())
+				{
+					FoursquareToken=ConnectFoursquare.getAccessToken();
 				}
-//				Intent intent = new Intent(this.getActivity().getApplicationContext(), ConnectActivity.class);
-//                startActivity(intent);
+				else
+					ConnectFoursquare.connect(this.getActivity());
+				
 		}
 	}
 

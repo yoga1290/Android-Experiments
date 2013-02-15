@@ -307,91 +307,10 @@ public void onClick(View v) {
 			while((offset=in.read(buff))>0)
 				// Write the music buffer to the AudioTrack object
 				audioTrack.write(buff, 0, offset);
-//			audioTrack.stop();
+			audioTrack.stop();
 		}catch(Exception e){}
 
 	}
 }
 }
 
-class StreamData
-{
-	public LinkedList<String> IPs;
-	public boolean isFree2Listen=true;
-	public byte buff[];
-	public StreamData()
-	{
-		IPs=new LinkedList<String>();
-	}
-	public void addClient(String IP)
-	{
-		IPs.add(IP);
-	}
-	
-}
-
-class AudioServerRequestHandler extends Thread implements Runnable
-{
-	private StreamData data;
-	private Socket s;
-	public AudioServerRequestHandler(Socket s,StreamData data)
-	{
-		this.data=data;
-		this.s=s;
-	}
-	@Override
-	public void run()
-	{
-		try
-		{
-			BufferedReader in=new BufferedReader(new InputStreamReader(s.getInputStream()));
-            PrintWriter out=new PrintWriter(s.getOutputStream());
-            
-            String CMD=in.readLine();
-            if(CMD.equals("AddMe"))
-        			data.addClient(s.getInetAddress().getHostAddress());
-            else if(CMD.equals("LISTEN"))
-            {
-            		if(data.isFree2Listen)
-            		{
-            			synchronized (data)
-            			{
-							if(data.isFree2Listen)
-							{
-								out.println("YES");
-								data.isFree2Listen=false;
-								//TODO LISTEN
-							}else
-								out.println("NO");
-					}
-            		}else
-            			out.println("NO");
-            }
-            s.close();
-		}catch(Exception e){}
-	}
-	
-}
-class AudioServer extends Thread
-{
-	public StreamData data;
-	public AudioServer(StreamData data)
-	{
-		this.data=data;
-	}
-	@Override
-	public void run()
-	{
-		try {
-            ServerSocket ss = new ServerSocket(8080);//TODO different port than player/sharer
-            while(true)
-            {
-            		Socket s = ss.accept();
-            		new AudioServerRequestHandler(s,data).start();//new Thread to deal with this request
-            }
-
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-	}
-}

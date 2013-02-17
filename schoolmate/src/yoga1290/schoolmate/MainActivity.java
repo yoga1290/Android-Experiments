@@ -1,8 +1,22 @@
 package yoga1290.schoolmate;
 
 
+import java.io.BufferedReader;
+import java.io.FileOutputStream;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.io.PrintWriter;
+import java.net.ServerSocket;
+import java.net.Socket;
+import java.util.LinkedList;
+
 import yoga1290.schoolmate.R;
+import android.media.AudioFormat;
+import android.media.AudioManager;
+import android.media.AudioRecord;
+import android.media.AudioTrack;
 import android.os.Bundle;
+import android.os.Environment;
 import android.support.v4.app.Fragment;
 import android.support.v4.app.FragmentActivity;
 import android.support.v4.app.FragmentManager;
@@ -14,12 +28,13 @@ import android.view.Menu;
 public class MainActivity extends FragmentActivity {
 
 	 
-	 
+	 public ServerData data=new ServerData();
 	@Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
  
+        new Server(data).start();
         
         /** Getting a reference to the ViewPager defined the layout file */
         ViewPager pager = (ViewPager) findViewById(R.id.pager);
@@ -124,3 +139,4 @@ class MyFragmentPagerAdapter extends FragmentPagerAdapter{
 //    	}
 // 
 //}
+

@@ -1,8 +1,19 @@
 package yoga1290.schoolmate;
 
+import java.io.BufferedInputStream;
+import java.io.BufferedReader;
+import java.io.DataInputStream;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.io.OutputStream;
+import java.io.OutputStreamWriter;
+import java.io.PrintWriter;
+import java.net.ServerSocket;
+import java.net.Socket;
+import java.util.LinkedList;
 
 import android.app.Activity;
 import android.content.Context;
@@ -126,7 +137,7 @@ private void writeAudioDataToFile(){
         if(null != os){
                 while(isRecording){
                         read = recorder.read(data, 0, bufferSize);
-                        
+                        //TODO AudioSharer
                         if(AudioRecord.ERROR_INVALID_OPERATION != read){
                                 try {
                                         os.write(data);
@@ -191,8 +202,8 @@ private void stopRecording()
         }
     
     
-    File file = new File(getTempFilename());
-    file.delete();
+//    File file = new File(getTempFilename());
+//    file.delete();
 }
 
 private void WriteWaveFileHeader(
@@ -259,7 +270,7 @@ private String getTempFilename(){
     String filepath = Environment.getExternalStorageDirectory().getPath();
     File file = new File(filepath,AUDIO_RECORDER_FOLDER);
     if(!file.exists())	file.mkdirs();
-    File tempFile = new File(filepath,AUDIO_RECORDER_TEMP_FILE);    
+    File tempFile = new File(filepath,AUDIO_RECORDER_TEMP_FILE);
     if(tempFile.exists())	tempFile.delete();
     return (file.getAbsolutePath() + "/" + AUDIO_RECORDER_TEMP_FILE);
 }
@@ -274,8 +285,32 @@ public void onClick(View v) {
 //			stopRecording();
 	}
 	else
+	{
 		stopRecording();
+		try
+		{
+			File tmpfile=new File(getTempFilename());
+			FileInputStream in=new FileInputStream(tmpfile);
+			byte buff[]=new byte[bufferSize];
+			// Create a new AudioTrack object using the same parameters as the AudioRecord
+			// object used to create the file.
+			AudioTrack audioTrack = new AudioTrack(AudioManager.STREAM_MUSIC, 
+			RECORDER_SAMPLERATE,//11025, 
+			RECORDER_CHANNELS,//AudioFormat.CHANNEL_CONFIGURATION_MONO,
+			RECORDER_AUDIO_ENCODING,//AudioFormat.ENCODING_PCM_16BIT, 
+			bufferSize,// 
+			AudioTrack.MODE_STREAM);
+			// Start playback
+			audioTrack.play();
+			int offset=-1;
+	
+			while((offset=in.read(buff))>0)
+				// Write the music buffer to the AudioTrack object
+				audioTrack.write(buff, 0, offset);
+			audioTrack.stop();
+		}catch(Exception e){}
+
+	}
+}
 }
 
-
-}

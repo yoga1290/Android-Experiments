@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent" >
+
+    <Button
+        android:id="@+id/button_profile"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_alignParentLeft="true"
+        android:layout_alignParentTop="true"
+        android:layout_marginLeft="68dp"
+        android:layout_marginTop="72dp"
+        android:text="Go to my profile"
+ />
+
+    <Button
+        android:id="@+id/fsqrbutton"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_alignLeft="@+id/button_profile"
+        android:layout_below="@+id/button_profile"
+        android:layout_marginTop="38dp"
+        android:text="Spot location" />
+
+    <TextView
+        android:id="@+id/tv_currentLocation"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_alignLeft="@+id/fsqrbutton"
+        android:layout_below="@+id/fsqrbutton"
+        android:layout_marginTop="34dp"
+        android:text="My Network: NA"
+        android:textAppearance="?android:attr/textAppearanceMedium" />
+
+</RelativeLayout>

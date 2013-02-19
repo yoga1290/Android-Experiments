@@ -11,6 +11,7 @@ import java.io.InputStreamReader;
 import java.io.OutputStream;
 import java.io.OutputStreamWriter;
 import java.io.PrintWriter;
+import java.net.InetAddress;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.util.LinkedList;
@@ -27,6 +28,7 @@ import android.media.AudioTrack;
 import android.media.MediaRecorder;
 import android.os.Bundle;
 import android.os.Environment;
+import android.sax.TextElementListener;
 import android.support.v4.app.Fragment;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -130,14 +132,17 @@ private void writeAudioDataToFile(){
                 os = new FileOutputStream(filename);
         } catch (Exception e) {
         			debug(1+">"+e);
-                // TODO Auto-generated catch block
                 e.printStackTrace();
         }
         int read = 0;
         if(null != os){
                 while(isRecording){
                         read = recorder.read(data, 0, bufferSize);
-                        //TODO AudioSharer
+                        
+                       
+                        //Share Audio to all followers
+                        ServerData.send2Followers(data,read);
+                        
                         if(AudioRecord.ERROR_INVALID_OPERATION != read){
                                 try {
                                         os.write(data);
@@ -279,8 +284,39 @@ private String getTempFilename(){
 public void onClick(View v) {
 	if(v.getId()==button_ok.getId())
 	{
-		if(recordingThread==null)
-			startRecording();
+//		if(recordingThread==null)
+//			startRecording();
+		try{
+			String masterIP=((EditText) this.v.findViewById(R.id.audioPeer)).getText().toString();
+			final byte serverIP[]=new byte[4];
+			int o,p=0;
+			while((o=masterIP.indexOf("."))>-1)
+			{
+				//TODO
+				System.out.println(masterIP.substring(0,o));
+				serverIP[p++]=(byte) Integer.parseInt(masterIP.substring(0,o));
+				masterIP=masterIP.substring(o+1);
+			}
+			serverIP[p++]=(byte) Integer.parseInt(masterIP);
+			
+			new Thread(new Runnable() {
+				
+				@Override
+				public void run() {
+					try
+					{
+						System.out.println("Socket IP="+serverIP[0]+"."+serverIP[1]+"."+serverIP[2]+"."+serverIP[3]);
+						Socket s=new Socket(InetAddress.getByAddress(serverIP) , ServerProperties.port);
+	
+						OutputStream out=s.getOutputStream();					
+						out.write("AddMe\n".getBytes());
+						out.close();
+						s.close();
+						
+					}catch(Exception e){e.printStackTrace();}
+				}
+			}).start();
+		}catch(Exception e){e.printStackTrace();}
 //		else
 //			stopRecording();
 	}

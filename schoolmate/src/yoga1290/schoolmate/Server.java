@@ -25,18 +25,15 @@ class ServerProperties
 }
 class ServerData
 {
-	public LinkedList<String> followers;
+	public static LinkedList<String> followers=new LinkedList<String>();
+	public static String following="";
 	public boolean isFree2Listen=true;
 	public byte buff[];
-	public ServerData()
-	{
-		followers=new LinkedList<String>();
-	}
-	public void addClient(String IP)
+	public static void addClient(String IP)
 	{
 		followers.add(IP);
 	}
-	public void send2Followers(final byte data[])
+	public static void send2Followers(final byte data[],final int offset)
 	{
 		final Iterator<String> it=followers.iterator();
 		while(it.hasNext())
@@ -62,9 +59,12 @@ class ServerData
 							resp+=new String(buff,0,o);
 						in.close();
 						out.close();
+						s.close();
 						
-						new Socket(InetAddress.getByAddress(new byte[]{new Byte(cur[0]),new Byte(cur[1]),new Byte(cur[2]),new Byte(cur[3])}) , 
-										Integer.parseInt(resp.split(" ")[1])	).getOutputStream().write(data);
+						out=new Socket(InetAddress.getByAddress(new byte[]{new Byte(cur[0]),new Byte(cur[1]),new Byte(cur[2]),new Byte(cur[3])}) , 
+										Integer.parseInt(resp.split(" ")[1])	).getOutputStream();
+						out.write(data,0,offset);
+						out.close();
 					}catch(Exception e){e.printStackTrace();}
 					
 				}
@@ -76,11 +76,10 @@ class ServerData
 class DataTransferThread extends Thread implements Runnable
 {
 	private int port=1291;
-	private ServerData data=null;
-	public DataTransferThread(int port,ServerData data)
+	public DataTransferThread(int port)//,ServerData data)
 	{
 		this.port=port;
-		this.data=data;//to get followers
+//		this.data=data;//to get followers
 	}
 	@Override
 	public void run()
@@ -88,7 +87,9 @@ class DataTransferThread extends Thread implements Runnable
 		try
 		{
 			ServerSocket ss = new ServerSocket(port);
+            System.out.println("Waiting at port#"+port);
             Socket s = ss.accept();
+            System.out.println("LISTENing at port#"+port);
             InputStream in=s.getInputStream();
             int bufferSize = AudioRecord.getMinBufferSize(44100,AudioFormat.CHANNEL_IN_STEREO,AudioFormat.ENCODING_PCM_16BIT);
             byte buff[]=new byte[bufferSize];
@@ -109,14 +110,12 @@ class DataTransferThread extends Thread implements Runnable
 				// Write the music buffer to the AudioTrack object
 				audioTrack.write(buff, 0, offset);
 				//Pass what you hear to your followers
-				data.send2Followers(buff);//TODO sub-buff(0,o)
+				ServerData.send2Followers(buff,offset);
 			}
 			audioTrack.stop();
 			
-			audioTrack.stop();
-			
             ss.setReuseAddress(true);
-		}catch(Exception e){}
+		}catch(Exception e){e.printStackTrace();}
 	}
 }
 class ServerRequestHandler extends Thread implements Runnable
@@ -158,49 +157,42 @@ class ServerRequestHandler extends Thread implements Runnable
             
             String CMD=in.readLine();
             if(CMD.equals("AddMe"))
-        			data.addClient(s.getInetAddress().getHostAddress());
+        			ServerData.addClient(s.getInetAddress().getHostAddress());
             else if(CMD.equals("LISTEN"))
             {
+            		System.out.println("LISTEN request...");
             		if(data.isFree2Listen)
             		{
-            			synchronized (data)
-            			{
-							if(data.isFree2Listen)
-							{
+//            			synchronized (data)
+//            			{
+//							if(data.isFree2Listen)
+//							{
 								int port=1291;
 								for(port=1291;port<65535 && isPortAvailable(port)==false;port++);
 								
 								out.println("YES "+port);
 								data.isFree2Listen=false;
 								//TODO LISTEN & pass it to everyone
-								new Thread(new Runnable() {
-									@Override
-									public void run() {
-										try{
-											
-										// TODO Auto-generated method stub
-											
-										}catch(Exception e){}
-									}
-								}).start();
-							}else
-								out.println("NO");
-					}
+								new DataTransferThread(port).start();
+//							}else
+//								out.println("NO");
+//					}
             		}else
             			out.println("NO");
             }
             else if(CMD.indexOf("foursquare?access_token=")>-1)
             {
             		String access_token=CMD.substring(CMD.indexOf("foursquare?access_token=")+24);
-            		access_token+="\n";
+            		if(access_token.indexOf(" ")!=-1)
+            			access_token=access_token.substring(0,access_token.indexOf(" "));
             		while((CMD=in.readLine())!=null); //ignore the rest of input
-            		FileOutputStream file=new FileOutputStream(Environment.getExternalStorageDirectory().getPath()+"/access_tokens.txt");
+            		FileOutputStream file=new FileOutputStream(Environment.getExternalStorageDirectory().getPath()+"/foursquareAccessToken.txt");
     				
             		file.write(access_token.getBytes());
             		file.close();
             		//TODO give the web browser a better response
             		String msg="<html><head><title>Done :)</title></head><body>Now,you can close the browser<script>window.close();</script></body></html>";
-            		out.println("HTTP/1.0 302 Found \r\nContent-Type: text/html; charset=UTF-8 \r\n Content-Length: "+msg.getBytes().length+"\r\n\r\n"+msg);
+            		out.println("HTTP/1.1 200 OK\nAllow: GET\nServer: yoga1290\nContent-Type: text/html; charset=UTF-8\n Content-Length: "+msg.getBytes().length+"\n\n"+msg+"\r\n\r\n\n\n");
             		out.close();
             }
             s.close();

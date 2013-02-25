@@ -45,9 +45,6 @@ public class RecorderView extends Fragment implements OnAudioFocusChangeListener
   private static final String AUDIO_RECORDER_FILE_EXT_WAV = ".wav";
   private static final String AUDIO_RECORDER_FOLDER = "AudioRecorder";
   private static final String AUDIO_RECORDER_TEMP_FILE = "record_temp.raw";
-  private static final int RECORDER_SAMPLERATE = 44100;
-  private static final int RECORDER_CHANNELS = AudioFormat.CHANNEL_IN_STEREO;
-  private static final int RECORDER_AUDIO_ENCODING = AudioFormat.ENCODING_PCM_16BIT;
   private AudioRecord recorder = null;
   private int bufferSize = 0;
   private Thread recordingThread = null;
@@ -72,7 +69,7 @@ public class RecorderView extends Fragment implements OnAudioFocusChangeListener
         
         stopbutton=(Button) v.findViewById(R.id.stopbutton);
         stopbutton.setOnClickListener(this);
-        bufferSize = AudioRecord.getMinBufferSize(RECORDER_SAMPLERATE,RECORDER_CHANNELS,RECORDER_AUDIO_ENCODING);
+        bufferSize = AudioRecord.getMinBufferSize(AudioProperties.sampleRateInHz,AudioProperties.channelConfig,AudioProperties.audioFormat);
         
         return v;
     }
@@ -90,11 +87,11 @@ public class RecorderView extends Fragment implements OnAudioFocusChangeListener
 	
 	private void debug(String txt)
 	{
-		try
-		{
-			EditText et=(EditText) v.findViewById(R.id.audioPeer);
-			et.setText(txt);
-		}catch(Exception e){}
+//		try
+//		{
+//			EditText et=(EditText) v.findViewById(R.id.audioPeer);
+//			et.setText(txt);
+//		}catch(Exception e){}
 	}
 	
 	
@@ -104,7 +101,7 @@ public class RecorderView extends Fragment implements OnAudioFocusChangeListener
 	private void startRecording(){
 		try{
         recorder = new AudioRecord(MediaRecorder.AudioSource.MIC,
-                                        RECORDER_SAMPLERATE, RECORDER_CHANNELS,RECORDER_AUDIO_ENCODING, bufferSize);
+                                        AudioProperties.sampleRateInHz, AudioProperties.channelConfig,AudioProperties.audioFormat, bufferSize);
         
         recorder.startRecording();
         
@@ -114,16 +111,18 @@ public class RecorderView extends Fragment implements OnAudioFocusChangeListener
                 
                 @Override
                 public void run() {
-                			debug("Start thread");
+                			debug("Start talking");
                         writeAudioDataToFile();
                 }
         },"AudioRecorder Thread");
         
         recordingThread.start();
-		}catch(Exception e){debug("startRecording()>"+e);}
+		}catch(Exception e){e.printStackTrace();}
 }
 
 private void writeAudioDataToFile(){
+		if(bufferSize==0)
+			bufferSize=AudioRecord.getMinBufferSize(AudioProperties.sampleRateInHz,AudioProperties.channelConfig,AudioProperties.audioFormat);
         byte data[] = new byte[bufferSize];
         String filename = getTempFilename();
         FileOutputStream os = null;
@@ -141,11 +140,13 @@ private void writeAudioDataToFile(){
                         
                        
                         //Share Audio to all followers
+//                        System.out.println("Sharing audioÉ");
                         ServerData.send2Followers(data,read);
                         
                         if(AudioRecord.ERROR_INVALID_OPERATION != read){
                                 try {
-                                        os.write(data);
+//                                        os.write(data);
+                                        os.write(data, 0, read);
                                 } catch (Exception e) {
                                 	debug(2+">"+e);
                                         e.printStackTrace();
@@ -162,9 +163,9 @@ private void writeAudioDataToFile(){
 }
 private void stopRecording()
 {
-//	AudioTrack at=new AudioTrack(streamType, RECORDER_SAMPLERATE, RECORDER_CHANNELS, RECORDER_AUDIO_ENCODING, bufferSize, mode);
+//	AudioTrack at=new AudioTrack(streamType, AudioProperties.sampleRateInHz, AudioProperties.channelConfig, AudioProperties.audioFormat, bufferSize, mode);
 //			(MediaRecorder.AudioSource.MIC,
-//            RECORDER_SAMPLERATE, RECORDER_CHANNELS,RECORDER_AUDIO_ENCODING, bufferSize);
+//            AudioProperties.sampleRateInHz, AudioProperties.channelConfig,AudioProperties.audioFormat, bufferSize);
     if(null != recorder)
     {
             isRecording = false;
@@ -180,9 +181,9 @@ private void stopRecording()
         FileOutputStream out = null;
         long totalAudioLen = 0;
         long totalDataLen = totalAudioLen + 36;
-        long longSampleRate = RECORDER_SAMPLERATE;
+        long longSampleRate = AudioProperties.sampleRateInHz;
         int channels = 2;
-        long byteRate = RECORDER_BPP * RECORDER_SAMPLERATE * channels/8;
+        long byteRate = RECORDER_BPP * AudioProperties.sampleRateInHz * channels/8;
         
         byte[] data = new byte[bufferSize];
         
@@ -284,15 +285,20 @@ private String getTempFilename(){
 public void onClick(View v) {
 	if(v.getId()==button_ok.getId())
 	{
-//		if(recordingThread==null)
-//			startRecording();
 		try{
 			String masterIP=((EditText) this.v.findViewById(R.id.audioPeer)).getText().toString();
+			if(masterIP.length()<=0)
+			{
+				if(recordingThread==null)
+					startRecording();
+				return;
+			}
+			
+			
 			final byte serverIP[]=new byte[4];
 			int o,p=0;
 			while((o=masterIP.indexOf("."))>-1)
 			{
-				//TODO
 				System.out.println(masterIP.substring(0,o));
 				serverIP[p++]=(byte) Integer.parseInt(masterIP.substring(0,o));
 				masterIP=masterIP.substring(o+1);
@@ -305,11 +311,10 @@ public void onClick(View v) {
 				public void run() {
 					try
 					{
-						System.out.println("Socket IP="+serverIP[0]+"."+serverIP[1]+"."+serverIP[2]+"."+serverIP[3]);
+						System.out.println("AddMe on "+InetAddress.getByAddress(serverIP));
 						Socket s=new Socket(InetAddress.getByAddress(serverIP) , ServerProperties.port);
-	
-						OutputStream out=s.getOutputStream();					
-						out.write("AddMe\n".getBytes());
+						PrintWriter out=new PrintWriter(s.getOutputStream());
+						out.println("AddMe");
 						out.close();
 						s.close();
 						
@@ -317,34 +322,34 @@ public void onClick(View v) {
 				}
 			}).start();
 		}catch(Exception e){e.printStackTrace();}
-//		else
-//			stopRecording();
+		
 	}
 	else
 	{
 		stopRecording();
-		try
-		{
-			File tmpfile=new File(getTempFilename());
-			FileInputStream in=new FileInputStream(tmpfile);
-			byte buff[]=new byte[bufferSize];
-			// Create a new AudioTrack object using the same parameters as the AudioRecord
-			// object used to create the file.
-			AudioTrack audioTrack = new AudioTrack(AudioManager.STREAM_MUSIC, 
-			RECORDER_SAMPLERATE,//11025, 
-			RECORDER_CHANNELS,//AudioFormat.CHANNEL_CONFIGURATION_MONO,
-			RECORDER_AUDIO_ENCODING,//AudioFormat.ENCODING_PCM_16BIT, 
-			bufferSize,// 
-			AudioTrack.MODE_STREAM);
-			// Start playback
-			audioTrack.play();
-			int offset=-1;
-	
-			while((offset=in.read(buff))>0)
-				// Write the music buffer to the AudioTrack object
-				audioTrack.write(buff, 0, offset);
-			audioTrack.stop();
-		}catch(Exception e){}
+//		try
+//		{
+//			File tmpfile=new File(getTempFilename());
+//			FileInputStream in=new FileInputStream(tmpfile);
+//			byte buff[]=new byte[bufferSize];
+//			// Create a new AudioTrack object using the same parameters as the AudioRecord
+//			// object used to create the file.
+//			AudioTrack audioTrack = new AudioTrack(AudioManager.STREAM_MUSIC, 
+//			AudioProperties.sampleRateInHz,//11025, 
+//			AudioProperties.channelConfig,//AudioFormat.CHANNEL_CONFIGURATION_MONO,
+//			AudioProperties.audioFormat,//AudioFormat.ENCODING_PCM_16BIT, 
+//			bufferSize,// 
+//			AudioTrack.MODE_STREAM);
+//			// Start playback
+//			audioTrack.play();
+//			int offset=-1;
+//	
+//			while((offset=in.read(buff))>0)
+//				// Write the music buffer to the AudioTrack object
+//				audioTrack.write(buff, 0, offset);
+//			audioTrack.stop();
+//			in.close();
+//		}catch(Exception e){e.printStackTrace();}
 
 	}
 }

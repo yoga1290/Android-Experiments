@@ -1,6 +1,7 @@
 package yoga1290.schoolmate;
 
 import java.io.BufferedReader;
+import java.io.BufferedWriter;
 import java.io.FileOutputStream;
 import java.io.InputStream;
 import java.io.InputStreamReader;
@@ -23,12 +24,19 @@ class ServerProperties
 {
 	public static final int port=1290;
 }
+class AudioProperties
+{
+	public static final int 	sampleRateInHz=44100,
+							channelConfig=AudioFormat.CHANNEL_IN_STEREO,
+							audioFormat=AudioFormat.ENCODING_PCM_16BIT;
+}
 class ServerData
 {
 	public static LinkedList<String> followers=new LinkedList<String>();
 	public static String following="";
 	public boolean isFree2Listen=true;
 	public byte buff[];
+	public static int lastUsedPort=1291;
 	public static void addClient(String IP)
 	{
 		followers.add(IP);
@@ -38,6 +46,7 @@ class ServerData
 		final Iterator<String> it=followers.iterator();
 		while(it.hasNext())
 		{
+			final String follower=it.next();
 			new Thread(new Runnable() {
 				
 				@Override
@@ -45,26 +54,38 @@ class ServerData
 				{
 					try
 					{
-						String cur[]=it.next().split(".");
-						Socket s=new Socket(InetAddress.getByAddress(new byte[]{new Byte(cur[0]),new Byte(cur[1]),new Byte(cur[2]),new Byte(cur[3])}) , ServerProperties.port);
+						int p=0,o;
+						byte ip[]=new byte[4];
+						String cur=follower;
+						while(p<4 && (o=cur.indexOf("."))>-1)
+						{
+							ip[p++]=(byte) Integer.parseInt(cur.substring(0,o));
+							cur=cur.substring(o+1);
+						}
+						ip[3]=(byte) Integer.parseInt(cur);
+						System.out.println("Connecting to "+follower);
 						
-						InputStream in=s.getInputStream();
-						OutputStream out=s.getOutputStream();
 						
-						out.write("LISTEN".getBytes());
-						String resp="";
-						int o;
-						byte buff[]=new byte[200];
-						while((o=in.read(buff))>0)
-							resp+=new String(buff,0,o);
-						in.close();
-						out.close();
-						s.close();
+						Socket s=new Socket(InetAddress.getByAddress(ip) , ServerProperties.port);
+					
+						PrintWriter out=new PrintWriter(s.getOutputStream());
+			            out.println("LISTEN");
+			            out.flush();
+//			            out.close();
+			            System.out.println("waiting for response b4 data...");
+			            BufferedReader in=new BufferedReader(new InputStreamReader(s.getInputStream()));
+			            String resp=in.readLine();
+			            //TODO FIX; connection timeouts here but why?!!
+			            
+			            System.out.println(s.getInetAddress()+" response: "+resp);
+			            out.close();
+			            in.close();
+			            s.close();
 						
-						out=new Socket(InetAddress.getByAddress(new byte[]{new Byte(cur[0]),new Byte(cur[1]),new Byte(cur[2]),new Byte(cur[3])}) , 
-										Integer.parseInt(resp.split(" ")[1])	).getOutputStream();
-						out.write(data,0,offset);
-						out.close();
+						Socket s2=new Socket(InetAddress.getByAddress(ip) , 
+										Integer.parseInt(resp.split(" ")[1])	);
+						s2.getOutputStream().write(data,0,offset);
+						s2.close();
 					}catch(Exception e){e.printStackTrace();}
 					
 				}
@@ -91,14 +112,14 @@ class DataTransferThread extends Thread implements Runnable
             Socket s = ss.accept();
             System.out.println("LISTENing at port#"+port);
             InputStream in=s.getInputStream();
-            int bufferSize = AudioRecord.getMinBufferSize(44100,AudioFormat.CHANNEL_IN_STEREO,AudioFormat.ENCODING_PCM_16BIT);
+            int bufferSize = AudioRecord.getMinBufferSize(AudioProperties.sampleRateInHz,AudioProperties.channelConfig,AudioProperties.audioFormat);
             byte buff[]=new byte[bufferSize];
 			// Create a new AudioTrack object using the same parameters as the AudioRecord
 			// object used to create the file.
 			AudioTrack audioTrack = new AudioTrack(AudioManager.STREAM_MUSIC, 
-			44100,//11025, 
-			AudioFormat.CHANNEL_IN_STEREO,//AudioFormat.CHANNEL_CONFIGURATION_MONO,
-			AudioFormat.ENCODING_PCM_16BIT,//AudioFormat.ENCODING_PCM_16BIT, 
+			AudioProperties.sampleRateInHz,//44100,//11025, 
+			AudioProperties.channelConfig,//AudioFormat.CHANNEL_IN_STEREO,//AudioFormat.CHANNEL_CONFIGURATION_MONO,
+			AudioProperties.audioFormat,//AudioFormat.ENCODING_PCM_16BIT,//AudioFormat.ENCODING_PCM_16BIT, 
 			bufferSize,// 
 			AudioTrack.MODE_STREAM);
 			// Start playback
@@ -120,11 +141,9 @@ class DataTransferThread extends Thread implements Runnable
 }
 class ServerRequestHandler extends Thread implements Runnable
 {
-	private ServerData data;
 	private Socket s;
-	public ServerRequestHandler(Socket s,ServerData data)
+	public ServerRequestHandler(Socket s)
 	{
-		this.data=data;
 		this.s=s;
 	}
 	public static boolean isPortAvailable(int port) 
@@ -152,33 +171,33 @@ class ServerRequestHandler extends Thread implements Runnable
 	{
 		try
 		{
+			System.out.println("Command from "+s.getInetAddress()+">");
 			BufferedReader in=new BufferedReader(new InputStreamReader(s.getInputStream()));
+            String CMD=in.readLine();
+//            while(CMD==null)
+//            		CMD=in.readLine();
+            System.out.println((CMD==null ? "NULL?!!":CMD)+"<");
+//            if(CMD==null)
+//            {
+//            		System.out.println("NO CMD was sent");
+//            		s.close();
+//            		return;
+//            }
             PrintWriter out=new PrintWriter(s.getOutputStream());
             
-            String CMD=in.readLine();
-            if(CMD.equals("AddMe"))
-        			ServerData.addClient(s.getInetAddress().getHostAddress());
-            else if(CMD.equals("LISTEN"))
+            
+            if(CMD.equals("LISTEN") || CMD.equals("hear me"))
             {
+            		
             		System.out.println("LISTEN request...");
-            		if(data.isFree2Listen)
-            		{
-//            			synchronized (data)
-//            			{
-//							if(data.isFree2Listen)
-//							{
-								int port=1291;
-								for(port=1291;port<65535 && isPortAvailable(port)==false;port++);
+				for(ServerData.lastUsedPort++; isPortAvailable(ServerData.lastUsedPort)==false;ServerData.lastUsedPort++);//port<65535 &&
 								
-								out.println("YES "+port);
-								data.isFree2Listen=false;
-								//TODO LISTEN & pass it to everyone
-								new DataTransferThread(port).start();
-//							}else
-//								out.println("NO");
-//					}
-            		}else
-            			out.println("NO");
+				out.println("YES "+ServerData.lastUsedPort);
+				out.flush();
+				System.out.println("New LISTEN port at "+ServerData.lastUsedPort);
+				//TODO LISTEN & pass it to everyone
+				new DataTransferThread(ServerData.lastUsedPort).start();								
+								
             }
             else if(CMD.indexOf("foursquare?access_token=")>-1)
             {
@@ -191,12 +210,24 @@ class ServerRequestHandler extends Thread implements Runnable
             		file.write(access_token.getBytes());
             		file.close();
             		//TODO give the web browser a better response
+            		OutputStream out2=s.getOutputStream();
             		String msg="<html><head><title>Done :)</title></head><body>Now,you can close the browser<script>window.close();</script></body></html>";
-            		out.println("HTTP/1.1 200 OK\nAllow: GET\nServer: yoga1290\nContent-Type: text/html; charset=UTF-8\n Content-Length: "+msg.getBytes().length+"\n\n"+msg+"\r\n\r\n\n\n");
-            		out.close();
+            		out2.write(("HTTP/1.1 200 OK\nAllow: GET\nServer: yoga1290\nContent-Type: text/html; charset=UTF-8\n Content-Length: "+msg.getBytes().length+"\n\n"+msg+"\r\n\r\n\n\n").getBytes());
+            		out2.close();
             }
+            else if(CMD.equals("AddMe"))
+            {
+            		System.out.println("Adding new follower "+s.getInetAddress().getHostAddress());
+        			ServerData.addClient(s.getInetAddress().getHostAddress());
+            }
+            
+            in.close();
+            out.close();
             s.close();
+            System.out.println("closing socket");
 		}catch(Exception e){e.printStackTrace();}
+		
+		
 	}
 	
 }
@@ -215,7 +246,7 @@ public class Server extends Thread
             while(true)
             {
             		Socket s = ss.accept();
-            		new ServerRequestHandler(s,data).start();//new Thread to deal with this request
+            		new ServerRequestHandler(s).start();//new Thread to deal with this request
             }
 
         } catch (Exception e) {

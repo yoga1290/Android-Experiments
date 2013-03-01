@@ -46,7 +46,7 @@ public class RecorderView extends Fragment implements OnAudioFocusChangeListener
   private static final String AUDIO_RECORDER_FOLDER = "AudioRecorder";
   private static final String AUDIO_RECORDER_TEMP_FILE = "record_temp.raw";
   private AudioRecord recorder = null;
-  private int bufferSize = 0;
+//  private int bufferSize = 0;
   private Thread recordingThread = null;
   private boolean isRecording = false;
 	
@@ -69,7 +69,7 @@ public class RecorderView extends Fragment implements OnAudioFocusChangeListener
         
         stopbutton=(Button) v.findViewById(R.id.stopbutton);
         stopbutton.setOnClickListener(this);
-        bufferSize = AudioRecord.getMinBufferSize(AudioProperties.sampleRateInHz,AudioProperties.channelConfig,AudioProperties.audioFormat);
+//        bufferSize = AudioRecord.getMinBufferSize(AudioProperties.sampleRateInHz,AudioProperties.channelConfig,AudioProperties.audioFormat);
         
         return v;
     }
@@ -101,7 +101,7 @@ public class RecorderView extends Fragment implements OnAudioFocusChangeListener
 	private void startRecording(){
 		try{
         recorder = new AudioRecord(MediaRecorder.AudioSource.MIC,
-                                        AudioProperties.sampleRateInHz, AudioProperties.channelConfig,AudioProperties.audioFormat, bufferSize);
+                                        AudioProperties.sampleRateInHz, AudioProperties.channelConfigIN,AudioProperties.audioFormat, AudioProperties.bufferSizeIN);
         
         recorder.startRecording();
         
@@ -121,45 +121,48 @@ public class RecorderView extends Fragment implements OnAudioFocusChangeListener
 }
 
 private void writeAudioDataToFile(){
-		if(bufferSize==0)
-			bufferSize=AudioRecord.getMinBufferSize(AudioProperties.sampleRateInHz,AudioProperties.channelConfig,AudioProperties.audioFormat);
-        byte data[] = new byte[bufferSize];
-        String filename = getTempFilename();
-        FileOutputStream os = null;
+//		if(bufferSize==0)
+//			bufferSize=AudioRecord.getMinBufferSize(AudioProperties.sampleRateInHz,AudioProperties.channelConfig,AudioProperties.audioFormat);
+        byte data[] = new byte[AudioProperties.bufferSizeIN];
+//        String filename = getTempFilename();
+//        FileOutputStream os = null;
         
-        try {
-                os = new FileOutputStream(filename);
-        } catch (Exception e) {
-        			debug(1+">"+e);
-                e.printStackTrace();
-        }
+//        try {
+//                os = new FileOutputStream(filename);
+//        } catch (Exception e) {
+//        			debug(1+">"+e);
+//                e.printStackTrace();
+//        }
         int read = 0;
-        if(null != os){
+//        if(null != os)
+        //{
                 while(isRecording){
-                        read = recorder.read(data, 0, bufferSize);
+                        read = recorder.read(data, 0, AudioProperties.bufferSizeIN);
                         
                        
                         //Share Audio to all followers
 //                        System.out.println("Sharing audioÉ");
-                        ServerData.send2Followers(data,read);
+                        
                         
                         if(AudioRecord.ERROR_INVALID_OPERATION != read){
-                                try {
-//                                        os.write(data);
-                                        os.write(data, 0, read);
-                                } catch (Exception e) {
-                                	debug(2+">"+e);
-                                        e.printStackTrace();
-                                }
+                        		ServerData.send2Followers(data,read);
+//                                try {
+//                                	
+////                                        os.write(data);
+//                                        os.write(data, 0, read);
+//                                } catch (Exception e) {
+//                                	debug(2+">"+e);
+//                                        e.printStackTrace();
+//                                }
                         }
                 }                
-                try {
-                        os.close();
-                } catch (Exception e) {
-                	debug(3+">"+e);
-                        e.printStackTrace();
-                }
-        }
+//                try {
+//                        os.close();
+//                } catch (Exception e) {
+//                	debug(3+">"+e);
+//                        e.printStackTrace();
+//                }
+       // }
 }
 private void stopRecording()
 {
@@ -177,6 +180,7 @@ private void stopRecording()
     
 //    copyWaveFile(getTempFilename(),getFilename());
 //    private void copyWaveFile(String inFilename,String outFilename){
+    /*
         FileInputStream in = null;
         FileOutputStream out = null;
         long totalAudioLen = 0;
@@ -206,7 +210,7 @@ private void stopRecording()
         	debug(4+">"+e);
                 e.printStackTrace();
         }
-    
+    */
     
 //    File file = new File(getTempFilename());
 //    file.delete();

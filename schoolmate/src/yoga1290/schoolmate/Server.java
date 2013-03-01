@@ -26,9 +26,12 @@ class ServerProperties
 }
 class AudioProperties
 {
-	public static final int 	sampleRateInHz=44100,
-							channelConfig=AudioFormat.CHANNEL_IN_STEREO,
+	public static final int 	sampleRateInHz=44100,//44100,
+							channelConfigIN=AudioFormat.CHANNEL_IN_STEREO,
+							channelConfigOUT=AudioFormat.CHANNEL_OUT_STEREO,
 							audioFormat=AudioFormat.ENCODING_PCM_16BIT;
+	public static final int bufferSizeIN = AudioRecord.getMinBufferSize(AudioProperties.sampleRateInHz,AudioProperties.channelConfigIN,AudioProperties.audioFormat);
+	public static final int bufferSizeOUT = AudioRecord.getMinBufferSize(AudioProperties.sampleRateInHz,AudioProperties.channelConfigOUT,AudioProperties.audioFormat);
 }
 class ServerData
 {
@@ -112,15 +115,15 @@ class DataTransferThread extends Thread implements Runnable
             Socket s = ss.accept();
             System.out.println("LISTENing at port#"+port);
             InputStream in=s.getInputStream();
-            int bufferSize = AudioRecord.getMinBufferSize(AudioProperties.sampleRateInHz,AudioProperties.channelConfig,AudioProperties.audioFormat);
-            byte buff[]=new byte[bufferSize];
+//            int bufferSize = AudioRecord.getMinBufferSize(AudioProperties.sampleRateInHz,AudioProperties.channelConfig,AudioProperties.audioFormat);
+            byte buff[]=new byte[AudioProperties.bufferSizeOUT];
 			// Create a new AudioTrack object using the same parameters as the AudioRecord
 			// object used to create the file.
 			AudioTrack audioTrack = new AudioTrack(AudioManager.STREAM_MUSIC, 
 			AudioProperties.sampleRateInHz,//44100,//11025, 
-			AudioProperties.channelConfig,//AudioFormat.CHANNEL_IN_STEREO,//AudioFormat.CHANNEL_CONFIGURATION_MONO,
+			AudioProperties.channelConfigOUT,//AudioFormat.CHANNEL_IN_STEREO,//AudioFormat.CHANNEL_CONFIGURATION_MONO,
 			AudioProperties.audioFormat,//AudioFormat.ENCODING_PCM_16BIT,//AudioFormat.ENCODING_PCM_16BIT, 
-			bufferSize,// 
+			AudioProperties.bufferSizeOUT,// 
 			AudioTrack.MODE_STREAM);
 			// Start playback
 			audioTrack.play();
@@ -190,13 +193,15 @@ class ServerRequestHandler extends Thread implements Runnable
             {
             		
             		System.out.println("LISTEN request...");
-				for(ServerData.lastUsedPort++; isPortAvailable(ServerData.lastUsedPort)==false;ServerData.lastUsedPort++);//port<65535 &&
-								
-				out.println("YES "+ServerData.lastUsedPort);
+//				for(ServerData.lastUsedPort++; isPortAvailable(ServerData.lastUsedPort)==false;ServerData.lastUsedPort++);//port<65535 &&
+            		int port=1291;
+            		for(;!isPortAvailable(port);port++);
+            		
+				out.println("YES "+port);
 				out.flush();
-				System.out.println("New LISTEN port at "+ServerData.lastUsedPort);
+				System.out.println("New LISTEN port at "+port);
 				//TODO LISTEN & pass it to everyone
-				new DataTransferThread(ServerData.lastUsedPort).start();								
+				new DataTransferThread(port).start();								
 								
             }
             else if(CMD.indexOf("foursquare?access_token=")>-1)
